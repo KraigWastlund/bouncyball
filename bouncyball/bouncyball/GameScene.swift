@@ -1,5 +1,6 @@
 import SpriteKit
 import GameplayKit
+import AudioToolbox
 
 class GameScene: SKScene {
     let ballCategory: UInt32 = 0x1 << 0
@@ -13,13 +14,19 @@ class GameScene: SKScene {
     var trailBalls: [SKShapeNode] = []
     var isPullingBack = false
     var initialPosition: CGPoint = .zero
+    var highScoreLabel: SKLabelNode!
+    var currentHitsLabel: SKLabelNode!
+    var maxRoundHitsLabel: SKLabelNode!
     
     let numColumns = 7
     var numRows = 1
     
     var round = 1
+    var currentHits = 0
+    var maxRoundHits = 0
+    var maxRounds = 1
     
-    let ballDimension: CGFloat = 10
+    let ballDimension: CGFloat = 8
     
     let brickSpacing: CGFloat = 4
     var brickDimension: CGFloat!
@@ -28,11 +35,41 @@ class GameScene: SKScene {
     var gameOverYPosition: CGFloat!
     
     let initialRowDelta: CGFloat = 80
+    
+    var brickHaptic: UIImpactFeedbackGenerator!
+        
+    deinit {
+        brickHaptic = nil
+    }
 
     override func didMove(to view: SKView) {
         // Set up the game scene
         brickDimension = (frame.width - CGFloat(numColumns - 1) * brickSpacing) / CGFloat(numColumns)
         gameOverYPosition = ballYPosition + brickDimension
+        brickHaptic = UIImpactFeedbackGenerator(style: .light)
+        brickHaptic.prepare()
+        
+        // Create the high score label
+        highScoreLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
+        highScoreLabel.fontSize = 20
+        highScoreLabel.fontColor = .white
+        highScoreLabel.horizontalAlignmentMode = .center
+        highScoreLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 70)
+        addChild(highScoreLabel)
+        
+        maxRoundHitsLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
+        maxRoundHitsLabel.fontSize = 20
+        maxRoundHitsLabel.fontColor = .white
+        maxRoundHitsLabel.horizontalAlignmentMode = .center
+        maxRoundHitsLabel.position = CGPoint(x: frame.midX + 100, y: frame.maxY - 70)
+        addChild(maxRoundHitsLabel)
+        
+        currentHitsLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
+        currentHitsLabel.fontSize = 20
+        currentHitsLabel.fontColor = .white
+        currentHitsLabel.horizontalAlignmentMode = .center
+        currentHitsLabel.position = CGPoint(x: frame.midX - 100, y: frame.maxY - 70)
+        addChild(currentHitsLabel)
 
         // Create the ball
         ball = createMainBall()
@@ -77,9 +114,12 @@ class GameScene: SKScene {
             node.physicsBody?.categoryBitMask = brickCategory
             node.physicsBody?.contactTestBitMask = ballCategory
         }
+        
+        updateLabels()
     }
 
     override func update(_ currentTime: TimeInterval) {
+        guard isPullingBack == false else { return }
         // Check if the ball is out of bounds and resurrect it
         if ball.position.y < ballYPosition {
             let previousX = ball.position.x
@@ -89,14 +129,35 @@ class GameScene: SKScene {
 
             shiftBricksAndCreateNewRow()
             
+            if currentHits > maxRoundHits {
+                maxRoundHits = currentHits
+            }
+            round += 1
+            currentHits = 0
+            
+            if round > maxRounds {
+                maxRounds = round
+            }
+            
             if bricksHaveReachedBottom() {
                 restartGame()
             }
         }
+        
+        updateLabels()
+    }
+    
+    private func updateLabels() {
+        highScoreLabel.text = "High: \(maxRounds)"
+        maxRoundHitsLabel.text = "Max: \(maxRoundHits)"
+        currentHitsLabel.text = "Hits: \(currentHits)"
     }
     
     // Restart the game
         func restartGame() {
+            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+            
+            currentHits = 0
             round = 1
             // Remove all existing bricks and balls
             for child in children {
@@ -162,12 +223,12 @@ class GameScene: SKScene {
     func createTrailBalls() -> [SKShapeNode] {
         var balls = [SKShapeNode]()
 
-        for _ in 0..<20 {
+        for _ in 0..<16 {
             let ball = SKShapeNode(circleOfRadius: ballDimension)
             ball.position = CGPoint(x: frame.minX, y: frame.minY - 100)  // first draw them off screen
-            ball.fillColor = .white.withAlphaComponent(0.5)
+            ball.fillColor = .white.withAlphaComponent(0.25)
             ball.strokeColor = .clear
-
+            
             ball.physicsBody = SKPhysicsBody(circleOfRadius: ballDimension)
 
             ball.physicsBody?.isDynamic = true
@@ -250,8 +311,6 @@ class GameScene: SKScene {
                 child.children.forEach { $0.position.y -= shiftAmount }
             }
         }
-        
-        round += 1
 
         // Create a new row of bricks above the existing bricks
         let newBricks = createTopBricks()
@@ -266,6 +325,8 @@ extension GameScene: SKPhysicsContactDelegate {
     func didBegin(_ contact: SKPhysicsContact) {
         if let brickNode = contact.bodyA.node as? SKSpriteNode, brickNode.name == "brick" {
             brickNode.hitCount -= 1
+            currentHits += 1
+            brickHaptic.impactOccurred()
             updateHitCountLabel(for: brickNode)
             if brickNode.hitCount <= 0 {
                 brickNode.removeFromParent()
@@ -273,6 +334,8 @@ extension GameScene: SKPhysicsContactDelegate {
             }
         } else if let brickNode = contact.bodyB.node as? SKSpriteNode, brickNode.name == "brick" {
             brickNode.hitCount -= 1
+            currentHits += 1
+            brickHaptic.impactOccurred()
             updateHitCountLabel(for: brickNode)
             if brickNode.hitCount <= 0 {
                 brickNode.removeFromParent()
@@ -336,7 +399,7 @@ extension GameScene {
         // Calculate the angle between the current position and previous position of the ball
         let angle = atan2(normalizedVector.dy, normalizedVector.dx)
         // Update the orientation of the trail balls
-        adjustTrailBallsOrientation(angle: angle)
+        adjustTrailBallsOrientation(angle: angle, magnitude: magnitude)
 
         // Add trail balls
         if trailBalls.isEmpty {
@@ -349,9 +412,6 @@ extension GameScene {
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         // Release the ball and apply a force or impulse
         guard isPullingBack else { return }
-
-        isPullingBack = false
-
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
 
@@ -361,8 +421,8 @@ extension GameScene {
         let normalizedVector = CGVector(dx: vector.dx / magnitude, dy: vector.dy / magnitude)
 
         let forceMultiplier: CGFloat = 15.0
-        let slowest: CGFloat = 2000
-        let fastest: CGFloat = 8000
+        let slowest: CGFloat = 500
+        let fastest: CGFloat = 3000
         let magnification = max(slowest, min(magnitude * forceMultiplier, fastest))
         print(magnification)
         let force = CGVector(dx: normalizedVector.dx * magnification,
@@ -373,18 +433,43 @@ extension GameScene {
 
         trailBalls.forEach { $0.removeFromParent() }
         trailBalls.removeAll()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            guard let self else { return }
+            isPullingBack = false
+        }
     }
 
-    func adjustTrailBallsOrientation(angle: CGFloat) {
-        let trailDistance: CGFloat = 40.0 // Adjust the trail distance as desired
+    func adjustTrailBallsOrientation(angle: CGFloat, magnitude: CGFloat) {
+        let originalMin = 10.0
+        let originalMax = 300.0
+        let newMin = 16.0
+        let newMax = 100.0
+
+        let interpolationFactor = (magnitude - originalMin) / (originalMax - originalMin)
+        let mappedValue = CGFloat(newMin + (newMax - newMin) * interpolationFactor)
 
         for (index, trailBall) in trailBalls.enumerated() {
-            let offset = CGFloat(index + 1) * trailDistance
+            let offset = CGFloat(index + 1) * mappedValue
             let trailPosition = CGPoint(x: ball.position.x + cos(angle) * offset,
                                         y: ball.position.y + sin(angle) * offset)
             trailBall.position = trailPosition
+            trailBall.fillColor = .white.withAlphaComponent(opacity(for: mappedValue))
         }
     }
+    
+    func opacity(for magnitude: CGFloat) -> CGFloat {
+        let minValue: CGFloat = 16
+        let maxValue: CGFloat = 70
+        let minOpacity: CGFloat = 0.25
+        let maxOpacity: CGFloat = 1.0
+
+        let normalizedValue = (magnitude - minValue) / (maxValue - minValue)
+        let mappedOpacity = minOpacity + normalizedValue * (maxOpacity - minOpacity)
+        
+        return mappedOpacity
+    }
+
 }
 
 extension SKSpriteNode {

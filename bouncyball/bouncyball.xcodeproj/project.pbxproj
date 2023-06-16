@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 53;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -20,7 +20,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		64B26BF621BA198F003B040E /* bouncyball.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bouncyball.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		64B26BF621BA198F003B040E /* Boing....app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Boing....app; sourceTree = BUILT_PRODUCTS_DIR; };
 		64B26BF921BA198F003B040E /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		64B26BFB21BA198F003B040E /* GameScene.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = GameScene.sks; sourceTree = "<group>"; };
 		64B26BFD21BA198F003B040E /* Actions.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = Actions.sks; sourceTree = "<group>"; };
@@ -78,7 +78,7 @@
 		64B26BF721BA198F003B040E /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				64B26BF621BA198F003B040E /* bouncyball.app */,
+				64B26BF621BA198F003B040E /* Boing....app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -118,7 +118,7 @@
 			);
 			name = bouncyball;
 			productName = bouncyball;
-			productReference = 64B26BF621BA198F003B040E /* bouncyball.app */;
+			productReference = 64B26BF621BA198F003B040E /* Boing....app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -127,12 +127,14 @@
 		64B26BEE21BA198F003B040E /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1010;
-				LastUpgradeCheck = 1010;
+				LastUpgradeCheck = 1430;
 				ORGANIZATIONNAME = "Kraig Wastlund";
 				TargetAttributes = {
 					64B26BF521BA198F003B040E = {
 						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = "";
 					};
 				};
 			};
@@ -250,6 +252,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -311,6 +314,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -348,14 +352,15 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = USSGBV55CM;
 				INFOPLIST_FILE = bouncyball/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Boing...;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.arcade-games";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = ktw.bouncy.com;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				PRODUCT_NAME = Boing...;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -368,14 +373,15 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = USSGBV55CM;
 				INFOPLIST_FILE = bouncyball/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Boing...;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.arcade-games";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = ktw.bouncy.com;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				PRODUCT_NAME = Boing...;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
