@@ -15,6 +15,7 @@
 		64B26C0521BA198F003B040E /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 64B26C0321BA198F003B040E /* Main.storyboard */; };
 		64B26C0721BA1990003B040E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 64B26C0621BA1990003B040E /* Assets.xcassets */; };
 		64B26C0A21BA1990003B040E /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 64B26C0821BA1990003B040E /* LaunchScreen.storyboard */; };
+		77B11A9E2A3C16D20063878C /* Explosion.sks in Resources */ = {isa = PBXBuildFile; fileRef = 77B11A9D2A3C16D20063878C /* Explosion.sks */; };
 		DA373E20B580019BBE77DAF6 /* Pods_bouncyball.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E41AEACC2FFF6D01BAA79DE9 /* Pods_bouncyball.framework */; };
 /* End PBXBuildFile section */
 
@@ -29,6 +30,7 @@
 		64B26C0621BA1990003B040E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		64B26C0921BA1990003B040E /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		64B26C0B21BA1990003B040E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		77B11A9D2A3C16D20063878C /* Explosion.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = Explosion.sks; sourceTree = "<group>"; };
 		9B9D75C204D9C37B45097168 /* Pods-bouncyball.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-bouncyball.release.xcconfig"; path = "Pods/Target Support Files/Pods-bouncyball/Pods-bouncyball.release.xcconfig"; sourceTree = "<group>"; };
 		CBB4B0FB16BBF90AFD19EC8E /* Pods-bouncyball.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-bouncyball.debug.xcconfig"; path = "Pods/Target Support Files/Pods-bouncyball/Pods-bouncyball.debug.xcconfig"; sourceTree = "<group>"; };
 		E41AEACC2FFF6D01BAA79DE9 /* Pods_bouncyball.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_bouncyball.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -93,6 +95,7 @@
 				64B26C0621BA1990003B040E /* Assets.xcassets */,
 				64B26C0821BA1990003B040E /* LaunchScreen.storyboard */,
 				64B26C0B21BA1990003B040E /* Info.plist */,
+				77B11A9D2A3C16D20063878C /* Explosion.sks */,
 			);
 			path = bouncyball;
 			sourceTree = "<group>";
@@ -161,6 +164,7 @@
 				64B26C0721BA1990003B040E /* Assets.xcassets in Resources */,
 				64B26C0A21BA1990003B040E /* LaunchScreen.storyboard in Resources */,
 				64B26BFE21BA198F003B040E /* Actions.sks in Resources */,
+				77B11A9E2A3C16D20063878C /* Explosion.sks in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
