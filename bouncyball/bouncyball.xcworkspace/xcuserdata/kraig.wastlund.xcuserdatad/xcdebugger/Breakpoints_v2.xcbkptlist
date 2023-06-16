@@ -3,4 +3,180 @@
    uuid = "1CEF1C09-C082-475B-A080-B9CFD76A6447"
    type = "0"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "00BE6562-C5D6-4407-86D6-7E27500A5B5F"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "bouncyball/GameScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "185"
+            endingLineNumber = "185"
+            landmarkName = "startFlashingRedArea(brickY:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "00BE6562-C5D6-4407-86D6-7E27500A5B5F - edf91fe50fdbd111"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Boing___.GameScene.startFlashingRedArea(brickY: CoreGraphics.CGFloat) -&gt; ()"
+                  moduleName = "Boing..."
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/kraig.wastlund/Sources/KraigWastlund/bouncyballs/bouncyball/bouncyball/GameScene.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "179"
+                  endingLineNumber = "179"
+                  offsetFromSymbolStart = "1764">
+               </Location>
+               <Location
+                  uuid = "00BE6562-C5D6-4407-86D6-7E27500A5B5F - edf91fe50fdbd111"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Boing___.GameScene.startFlashingRedArea(brickY: CoreGraphics.CGFloat) -&gt; ()"
+                  moduleName = "Boing..."
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/kraig.wastlund/Sources/KraigWastlund/bouncyballs/bouncyball/bouncyball/GameScene.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "179"
+                  endingLineNumber = "179"
+                  offsetFromSymbolStart = "1408">
+               </Location>
+               <Location
+                  uuid = "00BE6562-C5D6-4407-86D6-7E27500A5B5F - edf91fe50fdbd111"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Boing___.GameScene.startFlashingRedArea(brickY: CoreGraphics.CGFloat) -&gt; ()"
+                  moduleName = "Boing..."
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/kraig.wastlund/Sources/KraigWastlund/bouncyballs/bouncyball/bouncyball/GameScene.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "179"
+                  endingLineNumber = "179"
+                  offsetFromSymbolStart = "1996">
+               </Location>
+               <Location
+                  uuid = "00BE6562-C5D6-4407-86D6-7E27500A5B5F - edf91fe50fdbd111"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Boing___.GameScene.startFlashingRedArea(brickY: CoreGraphics.CGFloat) -&gt; ()"
+                  moduleName = "Boing..."
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/kraig.wastlund/Sources/KraigWastlund/bouncyballs/bouncyball/bouncyball/GameScene.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "179"
+                  endingLineNumber = "179"
+                  offsetFromSymbolStart = "2004">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "491F019E-05A4-4192-B00F-60778134C805"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "bouncyball/GameScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "191"
+            endingLineNumber = "191"
+            landmarkName = "startFlashingRedArea(brickY:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "491F019E-05A4-4192-B00F-60778134C805 - edf91fe50fdbd24f"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Boing___.GameScene.startFlashingRedArea(brickY: CoreGraphics.CGFloat) -&gt; ()"
+                  moduleName = "Boing..."
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/kraig.wastlund/Sources/KraigWastlund/bouncyballs/bouncyball/bouncyball/GameScene.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "185"
+                  endingLineNumber = "185"
+                  offsetFromSymbolStart = "2704">
+               </Location>
+               <Location
+                  uuid = "491F019E-05A4-4192-B00F-60778134C805 - edf91fe50fdbd24f"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Boing___.GameScene.startFlashingRedArea(brickY: CoreGraphics.CGFloat) -&gt; ()"
+                  moduleName = "Boing..."
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/kraig.wastlund/Sources/KraigWastlund/bouncyballs/bouncyball/bouncyball/GameScene.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "185"
+                  endingLineNumber = "185"
+                  offsetFromSymbolStart = "2864">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "5630E322-CAC2-4154-8F8C-723BAEAEB261"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "bouncyball/GameScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "182"
+            endingLineNumber = "182"
+            landmarkName = "startFlashingRedArea(brickY:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "5630E322-CAC2-4154-8F8C-723BAEAEB261 - edf91fe50fdbd174"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Boing___.GameScene.startFlashingRedArea(brickY: CoreGraphics.CGFloat) -&gt; ()"
+                  moduleName = "Boing..."
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/kraig.wastlund/Sources/KraigWastlund/bouncyballs/bouncyball/bouncyball/GameScene.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "176"
+                  endingLineNumber = "176"
+                  offsetFromSymbolStart = "620">
+               </Location>
+               <Location
+                  uuid = "5630E322-CAC2-4154-8F8C-723BAEAEB261 - edf91fe50fdbd174"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Boing___.GameScene.startFlashingRedArea(brickY: CoreGraphics.CGFloat) -&gt; ()"
+                  moduleName = "Boing..."
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/kraig.wastlund/Sources/KraigWastlund/bouncyballs/bouncyball/bouncyball/GameScene.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "176"
+                  endingLineNumber = "176"
+                  offsetFromSymbolStart = "976">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>

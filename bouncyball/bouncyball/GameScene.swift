@@ -18,6 +18,8 @@ class GameScene: SKScene {
     var currentHitsLabel: SKLabelNode!
     var maxRoundHitsLabel: SKLabelNode!
     
+    var flashingRedArea: SKSpriteNode!
+    
     let numColumns = 7
     var numRows = 1
     
@@ -52,24 +54,29 @@ class GameScene: SKScene {
         // Create the high score label
         highScoreLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
         highScoreLabel.fontSize = 20
-        highScoreLabel.fontColor = .white
+        highScoreLabel.fontColor = .green
         highScoreLabel.horizontalAlignmentMode = .center
         highScoreLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 70)
         addChild(highScoreLabel)
         
         maxRoundHitsLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
         maxRoundHitsLabel.fontSize = 20
-        maxRoundHitsLabel.fontColor = .white
+        maxRoundHitsLabel.fontColor = .green
         maxRoundHitsLabel.horizontalAlignmentMode = .center
         maxRoundHitsLabel.position = CGPoint(x: frame.midX + 100, y: frame.maxY - 70)
         addChild(maxRoundHitsLabel)
         
         currentHitsLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
         currentHitsLabel.fontSize = 20
-        currentHitsLabel.fontColor = .white
+        currentHitsLabel.fontColor = .green
         currentHitsLabel.horizontalAlignmentMode = .center
         currentHitsLabel.position = CGPoint(x: frame.midX - 100, y: frame.maxY - 70)
         addChild(currentHitsLabel)
+        
+        // Create the flashing red area
+        flashingRedArea = SKSpriteNode(color: .red, size: CGSize(width: frame.width, height: 100))
+        flashingRedArea.position = CGPoint(x: frame.midX, y: gameOverYPosition - brickDimension - 2)
+        addChild(flashingRedArea)
 
         // Create the ball
         ball = createMainBall()
@@ -120,11 +127,26 @@ class GameScene: SKScene {
 
     override func update(_ currentTime: TimeInterval) {
         guard isPullingBack == false else { return }
+        
+        // Check if the bricks have reached the flashing Y value
+        let lowestBrickYValue = lowestYBrickValue()
+        if lowestBrickYValue < gameOverYPosition * 4 {
+            startFlashingRedArea(brickY: lowestBrickYValue)
+        } else {
+            stopFlashingRedArea()
+        }
+        
         // Check if the ball is out of bounds and resurrect it
         if ball.position.y < ballYPosition {
             let previousX = ball.position.x
-            
-            ball.position = CGPoint(x: previousX, y: frame.minY + ballYPosition)
+            var newX = previousX
+            if newX < frame.minX + ballDimension {
+                newX = frame.minX + ballDimension
+            }
+            if newX > frame.maxX - ballDimension {
+                newX = frame.maxX - ballDimension
+            }
+            ball.position = CGPoint(x: newX, y: frame.minY + ballYPosition)
             ball.physicsBody?.velocity = .zero
 
             shiftBricksAndCreateNewRow()
@@ -146,6 +168,49 @@ class GameScene: SKScene {
         
         updateLabels()
     }
+    
+    func startFlashingRedArea(brickY: CGFloat) {
+        let flashDuration = 0.5 // Adjust this value to control the duration of each flash
+
+        // Create the actions for the flashing effect
+        let fadeInAction = SKAction.fadeIn(withDuration: flashDuration)
+        let fadeOutAction = SKAction.fadeOut(withDuration: flashDuration)
+        let flashSequence = SKAction.sequence([fadeOutAction, fadeInAction])
+        let repeatAction = SKAction.repeatForever(flashSequence)
+        
+        if brickY > gameOverYPosition * 2 && flashingRedArea.color != .orange {
+            flashingRedArea.removeAction(forKey: "flashAction")
+            flashingRedArea.color = .orange
+        } else if brickY <= gameOverYPosition * 2 && flashingRedArea.color != .red {
+            flashingRedArea.removeAction(forKey: "flashAction")
+            flashingRedArea.color = .red
+        }
+
+        // Run the flashing action on the red area sprite node
+        if flashingRedArea.action(forKey: "flashAction") == nil {
+            flashingRedArea.run(repeatAction, withKey: "flashAction")
+        }
+    }
+  
+    func stopFlashingRedArea() {
+        flashingRedArea.removeAction(forKey: "flashAction")
+        flashingRedArea.alpha = 0.0
+    }
+
+    func lowestYBrickValue() -> CGFloat {
+        var lowest = CGFloat.greatestFiniteMagnitude
+        for child in children {
+            if child.name == "bricks" {
+                for brick in child.children {
+                    if brick.position.y < lowest {
+                        lowest = brick.position.y
+                    }
+                }
+            }
+        }
+        return lowest
+    }
+
     
     private func updateLabels() {
         highScoreLabel.text = "High: \(maxRounds)"
@@ -206,7 +271,7 @@ class GameScene: SKScene {
     func createMainBall() -> SKShapeNode {
         let ball = SKShapeNode(circleOfRadius: ballDimension)
         ball.position = CGPoint(x: frame.midX, y: frame.minY + ballYPosition)
-        ball.fillColor = .red
+        ball.fillColor = .green
         ball.strokeColor = .clear
         ball.physicsBody = SKPhysicsBody(circleOfRadius: ballDimension)
         ball.physicsBody?.isDynamic = true
