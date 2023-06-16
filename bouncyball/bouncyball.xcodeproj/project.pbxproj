@@ -346,13 +346,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 3W3QAKTRFB;
+				DEVELOPMENT_TEAM = USSGBV55CM;
 				INFOPLIST_FILE = bouncyball/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.arcade-games";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = kraig.bouncyball;
+				PRODUCT_BUNDLE_IDENTIFIER = ktw.bouncy.com;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -365,13 +366,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 3W3QAKTRFB;
+				DEVELOPMENT_TEAM = USSGBV55CM;
 				INFOPLIST_FILE = bouncyball/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.arcade-games";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = kraig.bouncyball;
+				PRODUCT_BUNDLE_IDENTIFIER = ktw.bouncy.com;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
