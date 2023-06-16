@@ -33,6 +33,10 @@ class GameScene: SKScene {
     let brickSpacing: CGFloat = 4
     var brickDimension: CGFloat!
     
+    var warningThreshold1: CGFloat!
+    var warningThreshold2: CGFloat!
+    var warningThreshold3: CGFloat!
+    
     let ballYPosition: CGFloat = 40
     var gameOverYPosition: CGFloat!
     
@@ -50,6 +54,10 @@ class GameScene: SKScene {
         gameOverYPosition = ballYPosition + brickDimension
         brickHaptic = UIImpactFeedbackGenerator(style: .light)
         brickHaptic.prepare()
+        
+        warningThreshold1 = gameOverYPosition + (brickDimension + brickSpacing) * 2.5
+        warningThreshold2 = warningThreshold1 - (brickDimension + brickSpacing)
+        warningThreshold3 = warningThreshold2 - (brickDimension + brickSpacing)
         
         // Create the high score label
         highScoreLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
@@ -74,7 +82,7 @@ class GameScene: SKScene {
         addChild(currentHitsLabel)
         
         // Create the flashing red area
-        flashingRedArea = SKSpriteNode(color: .red, size: CGSize(width: frame.width, height: 100))
+        flashingRedArea = SKSpriteNode(color: .red.withAlphaComponent(0.5), size: CGSize(width: frame.width, height: 100))
         flashingRedArea.position = CGPoint(x: frame.midX, y: gameOverYPosition - brickDimension - 2)
         addChild(flashingRedArea)
 
@@ -130,7 +138,7 @@ class GameScene: SKScene {
         
         // Check if the bricks have reached the flashing Y value
         let lowestBrickYValue = lowestYBrickValue()
-        if lowestBrickYValue < gameOverYPosition * 4 {
+        if lowestBrickYValue < warningThreshold1 {
             startFlashingRedArea(brickY: lowestBrickYValue)
         } else {
             stopFlashingRedArea()
@@ -170,7 +178,7 @@ class GameScene: SKScene {
     }
     
     func startFlashingRedArea(brickY: CGFloat) {
-        let flashDuration = 0.5 // Adjust this value to control the duration of each flash
+        let flashDuration = duration(for: brickY)
 
         // Create the actions for the flashing effect
         let fadeInAction = SKAction.fadeIn(withDuration: flashDuration)
@@ -178,18 +186,32 @@ class GameScene: SKScene {
         let flashSequence = SKAction.sequence([fadeOutAction, fadeInAction])
         let repeatAction = SKAction.repeatForever(flashSequence)
         
-        if brickY > gameOverYPosition * 2 && flashingRedArea.color != .orange {
+        let color = color(for: brickY)
+        if flashingRedArea.color != color {
             flashingRedArea.removeAction(forKey: "flashAction")
-            flashingRedArea.color = .orange
-        } else if brickY <= gameOverYPosition * 2 && flashingRedArea.color != .red {
-            flashingRedArea.removeAction(forKey: "flashAction")
-            flashingRedArea.color = .red
-        }
-
-        // Run the flashing action on the red area sprite node
-        if flashingRedArea.action(forKey: "flashAction") == nil {
             flashingRedArea.run(repeatAction, withKey: "flashAction")
+            flashingRedArea.color = color
         }
+    }
+    
+    func color(for brickY: CGFloat) -> UIColor {
+        if brickY < warningThreshold3 {
+            return .red
+        }
+        if brickY < warningThreshold2 {
+            return .orange
+        }
+        return .yellow
+    }
+    
+    func duration(for brickY: CGFloat) -> CGFloat {
+        if brickY < warningThreshold3 {
+            return 0.25
+        }
+        if brickY < warningThreshold2 {
+            return 0.5
+        }
+        return 0.75
     }
   
     func stopFlashingRedArea() {
