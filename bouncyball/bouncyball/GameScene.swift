@@ -2,21 +2,34 @@ import SpriteKit
 import GameplayKit
 import AudioToolbox
 
+enum GameState {
+    case waitingForUser
+    case userIsPullingBack
+    case ballsAreFlying
+    case needsRoundReset
+    case needsRestart
+}
+
 class GameScene: SKScene {
+    var state: GameState = .needsRestart
+    
     let ballCategory: UInt32 = 0x1 << 0
     let brickCategory: UInt32 = 0x1 << 1
     let topAndSidesEdgeCategory: UInt32 = 0x1 << 2
     let bottomEdgeCategory: UInt32 = 0x1 << 3
-    let trailBallCategory: UInt32 = 0x1 << 4
+    let aimBallCategory: UInt32 = 0x1 << 4
+    let ballCollisionCategory: UInt32 = 0x1 << 5
 
     // Declare your properties
     var ball: SKShapeNode!
-    var trailBalls: [SKShapeNode] = []
-    var isPullingBack = false
+    var aimBalls: [SKShapeNode] = []
     var initialPosition: CGPoint = .zero
+    
     var highScoreLabel: SKLabelNode!
     var currentHitsLabel: SKLabelNode!
     var maxRoundHitsLabel: SKLabelNode!
+    var roundRatioLabel: SKLabelNode!
+    var bestRatioLabel: SKLabelNode!
     
     var flashingRedArea: SKSpriteNode!
     
@@ -28,7 +41,9 @@ class GameScene: SKScene {
     var maxRoundHits = 0
     var maxRounds = 1
     
-    let ballDimension: CGFloat = 8
+    var numOfTrailingBalls = 0
+    
+    let ballDimension: CGFloat = 7
     
     let brickSpacing: CGFloat = 4
     var brickDimension: CGFloat!
@@ -37,21 +52,36 @@ class GameScene: SKScene {
     var warningThreshold2: CGFloat!
     var warningThreshold3: CGFloat!
     
-    let ballYPosition: CGFloat = 40
+    let ballYPosition: CGFloat = 60
     var gameOverYPosition: CGFloat!
     
     let initialRowDelta: CGFloat = 80
     
     var brickHaptic: UIImpactFeedbackGenerator!
+    
+    var bestRatio: Double = 0
+    var roundRatio: Double = 0
         
     deinit {
         brickHaptic = nil
+    }
+    
+    private func calculatedGameOverYPosition() -> CGFloat {
+        //let startPosition = frame.maxY - brickDimension / 2 - brickSpacing - initialRowDelta
+        var position: CGFloat = frame.maxY - brickDimension / 2 - brickSpacing - initialRowDelta
+        let brickDelta = brickSpacing + brickDimension
+        
+        while position - brickDelta > ballYPosition + ballDimension {
+            position -= brickDelta
+        }
+        
+        return position - (brickDimension / 2)
     }
 
     override func didMove(to view: SKView) {
         // Set up the game scene
         brickDimension = (frame.width - CGFloat(numColumns - 1) * brickSpacing) / CGFloat(numColumns)
-        gameOverYPosition = ballYPosition + brickDimension
+        gameOverYPosition = calculatedGameOverYPosition()
         brickHaptic = UIImpactFeedbackGenerator(style: .light)
         brickHaptic.prepare()
         
@@ -60,45 +90,56 @@ class GameScene: SKScene {
         warningThreshold3 = warningThreshold2 - (brickDimension + brickSpacing)
         
         // Create the high score label
-        highScoreLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
-        highScoreLabel.fontSize = 20
+        highScoreLabel = SKLabelNode(fontNamed: "Helvetica")
+        highScoreLabel.fontSize = 16
         highScoreLabel.fontColor = .green
         highScoreLabel.horizontalAlignmentMode = .center
-        highScoreLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 70)
+        highScoreLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 72)
         addChild(highScoreLabel)
         
-        maxRoundHitsLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
-        maxRoundHitsLabel.fontSize = 20
+        maxRoundHitsLabel = SKLabelNode(fontNamed: "Helvetica")
+        maxRoundHitsLabel.fontSize = 14
         maxRoundHitsLabel.fontColor = .green
         maxRoundHitsLabel.horizontalAlignmentMode = .center
-        maxRoundHitsLabel.position = CGPoint(x: frame.midX + 100, y: frame.maxY - 70)
+        maxRoundHitsLabel.position = CGPoint(x: frame.midX + 130, y: frame.maxY - 72)
         addChild(maxRoundHitsLabel)
         
-        currentHitsLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
-        currentHitsLabel.fontSize = 20
+        currentHitsLabel = SKLabelNode(fontNamed: "Helvetica")
+        currentHitsLabel.fontSize = 14
         currentHitsLabel.fontColor = .green
         currentHitsLabel.horizontalAlignmentMode = .center
-        currentHitsLabel.position = CGPoint(x: frame.midX - 100, y: frame.maxY - 70)
+        currentHitsLabel.position = CGPoint(x: frame.midX - 130, y: frame.maxY - 72)
         addChild(currentHitsLabel)
         
+        roundRatioLabel = SKLabelNode(fontNamed: "Helvetica")
+        roundRatioLabel.fontSize = 14
+        roundRatioLabel.fontColor = .green
+        roundRatioLabel.horizontalAlignmentMode = .center
+        roundRatioLabel.position = CGPoint(x: frame.midX - 130, y: frame.maxY - 54)
+        addChild(roundRatioLabel)
+        
+        bestRatioLabel = SKLabelNode(fontNamed: "Helvetica")
+        bestRatioLabel.fontSize = 14
+        bestRatioLabel.fontColor = .green
+        bestRatioLabel.horizontalAlignmentMode = .center
+        bestRatioLabel.position = CGPoint(x: frame.midX + 130, y: frame.maxY - 54)
+        addChild(bestRatioLabel)
+        
         // Create the flashing red area
-        flashingRedArea = SKSpriteNode(color: .red.withAlphaComponent(0.5), size: CGSize(width: frame.width, height: 100))
-        flashingRedArea.position = CGPoint(x: frame.midX, y: gameOverYPosition - brickDimension - 2)
+        flashingRedArea = SKSpriteNode(color: .red.withAlphaComponent(0.5), size: CGSize(width: frame.width, height: 2))
+        flashingRedArea.position = CGPoint(x: frame.midX, y: gameOverYPosition - 3)
         addChild(flashingRedArea)
 
         // Create the ball
         ball = createMainBall()
+        ball.name = "mainball"
         addChild(ball)
-        
-        // Create the bricks
-        let bricks = createTopBricks()
-        addChild(bricks)
 
         // Create physics bodies for screen edges
         let topEdge = SKPhysicsBody(edgeFrom: CGPoint(x: frame.minX, y: frame.maxY),
                                     to: CGPoint(x: frame.maxX, y: frame.maxY))
         topEdge.categoryBitMask = topAndSidesEdgeCategory
-        topEdge.collisionBitMask = ballCategory
+        topEdge.collisionBitMask = ballCollisionCategory
         topEdge.contactTestBitMask = ballCategory
         physicsBody = topEdge
 
@@ -106,7 +147,7 @@ class GameScene: SKScene {
         let leftEdge = SKPhysicsBody(edgeFrom: CGPoint(x: frame.minX, y: frame.minY),
                                      to: CGPoint(x: frame.minX, y: frame.maxY))
         leftEdge.categoryBitMask = topAndSidesEdgeCategory
-        leftEdge.collisionBitMask = ballCategory
+        leftEdge.collisionBitMask = ballCollisionCategory
         leftEdge.contactTestBitMask = ballCategory
         leftEdgeNode.physicsBody = leftEdge
         addChild(leftEdgeNode)
@@ -115,7 +156,7 @@ class GameScene: SKScene {
         let rightEdge = SKPhysicsBody(edgeFrom: CGPoint(x: frame.maxX, y: frame.minY),
                                       to: CGPoint(x: frame.maxX, y: frame.maxY))
         rightEdge.categoryBitMask = topAndSidesEdgeCategory
-        rightEdge.collisionBitMask = ballCategory
+        rightEdge.collisionBitMask = ballCollisionCategory
         rightEdge.contactTestBitMask = ballCategory
         rightEdgeNode.physicsBody = rightEdge
         addChild(rightEdgeNode)
@@ -124,18 +165,84 @@ class GameScene: SKScene {
         physicsWorld.contactDelegate = self
         ball.physicsBody?.categoryBitMask = ballCategory
         ball.physicsBody?.contactTestBitMask = brickCategory
-        bricks.enumerateChildNodes(withName: "brick") { [weak self] node, _ in
-            guard let self else { return }
-            node.physicsBody?.categoryBitMask = brickCategory
-            node.physicsBody?.contactTestBitMask = ballCategory
+
+        updateLabels()
+    }
+
+    // MARK: - Gets called 30 times a second
+    override func update(_ currentTime: TimeInterval) {
+        guard state != .userIsPullingBack else { return }
+        
+        flashWarningIfNeeded()
+        
+        removeTrailingBalls()
+        
+        if ball.position.y < ballYPosition || nodeIsOffScreen(node: ball) {
+            updateBall(previousX: ball.position.x)
+        }
+        
+        if state == .needsRoundReset {
+            // Bricks
+            shiftBricksAndCreateNewRow()
+            
+            // Score
+            updateScores()
+            state = .waitingForUser
+        }
+        
+        if state == .needsRestart {
+            restartGame()
+            state = .waitingForUser
+        }
+        
+        if state == .ballsAreFlying {
+            if !trailingBallsExist() && ball.physicsBody?.velocity == .zero {
+                state = .needsRoundReset
+            }
+        }
+        
+        if bricksHaveReachedBottom() {
+            state = .needsRestart
         }
         
         updateLabels()
     }
-
-    override func update(_ currentTime: TimeInterval) {
-        guard isPullingBack == false else { return }
+    
+    private func checkForBallsOffScreen() -> Bool {
+        let balls = children.filter { $0.name == "mainball" || $0.name == "trailingball" }
+        for ball in balls {
+            if nodeIsOffScreen(node: ball) {
+                return true
+            }
+        }
         
+        return false
+    }
+    
+    private func nodeIsOffScreen(node: SKNode) -> Bool {
+        let sceneFrame = self.frame
+        let nodeFrame = node.calculateAccumulatedFrame()
+        if nodeFrame.maxY < sceneFrame.minY || nodeFrame.minY > sceneFrame.maxY ||
+            nodeFrame.maxX < sceneFrame.minX || nodeFrame.minX > sceneFrame.maxX {
+            return true
+        }
+        return false
+    }
+    
+    private func removeTrailingBalls() {
+        let trailingBalls = children.filter { $0.name == "trailingball" }
+        for ball in trailingBalls {
+            if nodeIsOffScreen(node: ball) {
+                ball.removeFromParent()
+            }
+        }
+    }
+    
+    private func trailingBallsExist() -> Bool {
+        return !children.filter { $0.name == "trailingball" }.isEmpty
+    }
+    
+    private func flashWarningIfNeeded() {
         // Check if the bricks have reached the flashing Y value
         let lowestBrickYValue = lowestYBrickValue()
         if lowestBrickYValue < warningThreshold1 {
@@ -143,38 +250,30 @@ class GameScene: SKScene {
         } else {
             stopFlashingRedArea()
         }
-        
-        // Check if the ball is out of bounds and resurrect it
-        if ball.position.y < ballYPosition {
-            let previousX = ball.position.x
-            var newX = previousX
-            if newX < frame.minX + ballDimension {
-                newX = frame.minX + ballDimension
-            }
-            if newX > frame.maxX - ballDimension {
-                newX = frame.maxX - ballDimension
-            }
-            ball.position = CGPoint(x: newX, y: frame.minY + ballYPosition)
-            ball.physicsBody?.velocity = .zero
-
-            shiftBricksAndCreateNewRow()
-            
-            if currentHits > maxRoundHits {
-                maxRoundHits = currentHits
-            }
-            round += 1
-            currentHits = 0
-            
-            if round > maxRounds {
-                maxRounds = round
-            }
-            
-            if bricksHaveReachedBottom() {
-                restartGame()
-            }
+    }
+    
+    private func updateBall(previousX: CGFloat) {
+        var newX = previousX
+        if newX < frame.minX + ballDimension {
+            newX = frame.minX + ballDimension
         }
+        if newX > frame.maxX - ballDimension {
+            newX = frame.maxX - ballDimension
+        }
+        ball.position = CGPoint(x: newX, y: frame.minY + ballYPosition)
+        ball.physicsBody?.velocity = .zero
+    }
+    
+    private func updateScores() {
+        if currentHits > maxRoundHits {
+            maxRoundHits = currentHits
+        }
+        round += 1
+        numOfTrailingBalls += 1
         
-        updateLabels()
+        if round > maxRounds {
+            maxRounds = round
+        }
     }
     
     func startFlashingRedArea(brickY: CGFloat) {
@@ -235,9 +334,13 @@ class GameScene: SKScene {
 
     
     private func updateLabels() {
-        highScoreLabel.text = "High: \(maxRounds)"
-        maxRoundHitsLabel.text = "Max: \(maxRoundHits)"
-        currentHitsLabel.text = "Hits: \(currentHits)"
+        roundRatio = max(roundRatio, (Double(currentHits) / Double(numOfTrailingBalls + 1)))
+        bestRatio = max(bestRatio, roundRatio)
+        highScoreLabel.text = "High Score: \(maxRounds)"
+        maxRoundHitsLabel.text = "Max Hits: \(maxRoundHits)"
+        currentHitsLabel.text = "Rnd Hits: \(currentHits)"
+        roundRatioLabel.text = "Ratio: \(String(format: "%.2f", roundRatio))"
+        bestRatioLabel.text = "Best Ratio: \(String(format: "%.2f", bestRatio))"
     }
     
     // Restart the game
@@ -245,20 +348,22 @@ class GameScene: SKScene {
             AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
             
             currentHits = 0
+            numOfTrailingBalls = 0
             round = 1
             // Remove all existing bricks and balls
             for child in children {
-                if ["bricks", "mainball", "trailball"].contains(child.name) {
+                if ["bricks", "mainball", "aimball"].contains(child.name) {
                     child.removeFromParent()
                 }
             }
             
             // Reset necessary properties and variables
             numRows = 1
-            trailBalls.removeAll()
+            aimBalls.removeAll()
             
             // Create the initial ball and bricks
             ball = createMainBall()
+            ball.name = "mainball"
             addChild(ball)
             
             let bricks = createTopBricks()
@@ -268,11 +373,6 @@ class GameScene: SKScene {
             physicsWorld.contactDelegate = self
             ball.physicsBody?.categoryBitMask = ballCategory
             ball.physicsBody?.contactTestBitMask = brickCategory
-            bricks.enumerateChildNodes(withName: "brick") { [weak self] node, _ in
-                guard let self else { return }
-                node.physicsBody?.categoryBitMask = brickCategory
-                node.physicsBody?.contactTestBitMask = ballCategory
-            }
         }
     
     // Check if any bricks have reached the bottom gutter
@@ -302,12 +402,15 @@ class GameScene: SKScene {
         ball.physicsBody?.linearDamping = 0.0
         ball.physicsBody?.angularDamping = 0.0
         ball.physicsBody?.affectedByGravity = false
-        ball.name = "mainball"
+        ball.physicsBody?.categoryBitMask = ballCategory
+        ball.physicsBody?.contactTestBitMask = brickCategory | topAndSidesEdgeCategory
+        ball.physicsBody?.collisionBitMask = ballCollisionCategory | topAndSidesEdgeCategory
+        
         return ball
     }
 
     // Create the ball node
-    func createTrailBalls() -> [SKShapeNode] {
+    func createAimBalls() -> [SKShapeNode] {
         var balls = [SKShapeNode]()
 
         for _ in 0..<16 {
@@ -325,11 +428,11 @@ class GameScene: SKScene {
             ball.physicsBody?.angularDamping = 0.0
             ball.physicsBody?.affectedByGravity = false
 
-            ball.physicsBody!.categoryBitMask = trailBallCategory
+            ball.physicsBody!.categoryBitMask = aimBallCategory
             ball.physicsBody!.collisionBitMask = 0
             ball.physicsBody!.contactTestBitMask = 0
             
-            ball.name = "trailball"
+            ball.name = "aimball"
 
             balls.append(ball)
         }
@@ -403,6 +506,14 @@ class GameScene: SKScene {
         let newBricks = createTopBricks()
         addChild(newBricks)
         numRows += 1
+        
+        let bricks = children.filter { $0.name == "brick" }
+        bricks.forEach { [weak self] node in
+            guard let self else { return }
+            node.physicsBody?.categoryBitMask = brickCategory
+            node.physicsBody?.contactTestBitMask = ballCategory
+            node.physicsBody?.collisionBitMask = ballCollisionCategory
+        }
     }
 }
 
@@ -464,17 +575,17 @@ extension GameScene: SKPhysicsContactDelegate {
 extension GameScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // Check if the touch is on the ball and start pulling back
+        guard state == .waitingForUser else { return }
         guard ball.physicsBody?.velocity == .zero else { return }
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
 
-        isPullingBack = true
+        state = .userIsPullingBack
         initialPosition = location
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard isPullingBack else { return }
+        guard state == .userIsPullingBack else { return }
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
 
@@ -489,18 +600,20 @@ extension GameScene {
         adjustTrailBallsOrientation(angle: angle, magnitude: magnitude)
 
         // Add trail balls
-        if trailBalls.isEmpty {
-            print("triail balls made")
-            trailBalls = createTrailBalls()
-            trailBalls.forEach { addChild($0) }
+        if aimBalls.isEmpty {
+            aimBalls = createAimBalls()
+            aimBalls.forEach { addChild($0) }
         }
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         // Release the ball and apply a force or impulse
-        guard isPullingBack else { return }
+        guard state == .userIsPullingBack else { return }
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
+        
+        currentHits = 0
+        roundRatio = 0.0
 
         // Calculate the force or impulse based on the pull distance and direction
         let vector = CGVector(dx: initialPosition.x - location.x, dy: initialPosition.y - location.y)
@@ -509,21 +622,31 @@ extension GameScene {
 
         let forceMultiplier: CGFloat = 15.0
         let slowest: CGFloat = 500
-        let fastest: CGFloat = 3000
+        let fastest: CGFloat = 1000
         let magnification = max(slowest, min(magnitude * forceMultiplier, fastest))
-        print(magnification)
         let force = CGVector(dx: normalizedVector.dx * magnification,
                              dy: normalizedVector.dy * magnification)
 
         // Apply the force or impulse to the ball's physics body
         ball.physicsBody?.applyForce(force)
-
-        trailBalls.forEach { $0.removeFromParent() }
-        trailBalls.removeAll()
+        let position = ball.position
+        for i in 0..<numOfTrailingBalls {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.1) { [weak self] in
+                guard let self else { return }
+                let ball = createMainBall()
+                ball.name = "trailingball"
+                ball.position = position
+                addChild(ball)
+                ball.physicsBody?.applyForce(force)
+            }
+        }
+        
+        aimBalls.forEach { $0.removeFromParent() }
+        aimBalls.removeAll()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
             guard let self else { return }
-            isPullingBack = false
+            state = .ballsAreFlying
         }
     }
 
@@ -536,7 +659,7 @@ extension GameScene {
         let interpolationFactor = (magnitude - originalMin) / (originalMax - originalMin)
         let mappedValue = CGFloat(newMin + (newMax - newMin) * interpolationFactor)
 
-        for (index, trailBall) in trailBalls.enumerated() {
+        for (index, trailBall) in aimBalls.enumerated() {
             let offset = CGFloat(index + 1) * mappedValue
             let trailPosition = CGPoint(x: ball.position.x + cos(angle) * offset,
                                         y: ball.position.y + sin(angle) * offset)
