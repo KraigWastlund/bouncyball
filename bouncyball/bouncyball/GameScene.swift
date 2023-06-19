@@ -98,8 +98,8 @@ class GameScene: SKScene {
     }
     
     private func setupLabels() {
-        let lowerLabelY = frame.maxY - 76
-        let upperLabelY = frame.maxY - 58
+        let lowerLabelY = frame.maxY - 74
+        let upperLabelY = lowerLabelY + 16
         highScoreLabel = SKLabelNode(fontNamed: "Helvetica")
         highScoreLabel.fontSize = 16
         highScoreLabel.fontColor = .green
@@ -427,9 +427,9 @@ class GameScene: SKScene {
     private func updateLabels() {
         roundRatio = max(roundRatio, (Double(currentHits) / Double(numOfTrailingBalls + 1)))
         bestRatio = max(bestRatio, roundRatio)
-        highScoreLabel.text = "High Score: \(maxRounds)"
+        highScoreLabel.text = "Level: \(maxRounds)"
         maxRoundHitsLabel.text = "Max Hits: \(maxRoundHits)"
-        currentHitsLabel.text = "Rnd Hits: \(currentHits)"
+        currentHitsLabel.text = "Hits: \(currentHits)"
         roundRatioLabel.text = "Ratio: \(String(format: "%.2f", roundRatio))"
         bestRatioLabel.text = "Best Ratio: \(String(format: "%.2f", bestRatio))"
     }
