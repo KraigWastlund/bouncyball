@@ -29,6 +29,7 @@ class GameScene: SKScene {
     var initialPosition: CGPoint = .zero
     
     var highScoreLabel: SKLabelNode!
+    var currentLevelLabel: SKLabelNode!
     var currentHitsLabel: SKLabelNode!
     var maxRoundHitsLabel: SKLabelNode!
     var roundRatioLabel: SKLabelNode!
@@ -41,8 +42,8 @@ class GameScene: SKScene {
     
     var round = 1
     var currentHits = 0
-    var maxRoundHits = 0
-    var maxRounds = 1
+    var maxHits = 0
+    var highestLevel = 1
     
     var numOfTrailingBalls = 0
     
@@ -63,8 +64,8 @@ class GameScene: SKScene {
     
     var brickHaptic: UIImpactFeedbackGenerator!
     
-    var bestRatio: Double = 0
-    var roundRatio: Double = 0
+    var bestRatio: Float = 0
+    var roundRatio: Float = 0
         
     deinit {
         brickHaptic = nil
@@ -73,6 +74,7 @@ class GameScene: SKScene {
     // MARK: - VIEW DID LOAD
 
     override func didMove(to view: SKView) {
+        grabUserDefaults()
         setupHaptic()
         setBrickDimension()
         setupLabels()
@@ -88,6 +90,23 @@ class GameScene: SKScene {
         updateLabels()
     }
     
+    private func grabUserDefaults() {
+        let br = AppSettings.bestRatio
+        let mh = AppSettings.maxHits
+        let hl = AppSettings.highestLevel
+        
+        if br > bestRatio {
+            bestRatio = br
+        }
+        
+        if mh > maxHits {
+            maxHits = mh
+        }
+        if hl > highestLevel {
+            highestLevel = hl
+        }
+    }
+    
     private func setupHaptic() {
         brickHaptic = UIImpactFeedbackGenerator(style: .light)
         brickHaptic.prepare()
@@ -98,13 +117,21 @@ class GameScene: SKScene {
     }
     
     private func setupLabels() {
-        let lowerLabelY = frame.maxY - 74
+        let lowerLabelY = frame.maxY - 76
         let upperLabelY = lowerLabelY + 16
+        
+        currentLevelLabel = SKLabelNode(fontNamed: "Helvetica")
+        currentLevelLabel.fontSize = 16
+        currentLevelLabel.fontColor = .green
+        currentLevelLabel.horizontalAlignmentMode = .center
+        currentLevelLabel.position = CGPoint(x: frame.midX, y: lowerLabelY)
+        addChild(currentLevelLabel)
+        
         highScoreLabel = SKLabelNode(fontNamed: "Helvetica")
-        highScoreLabel.fontSize = 16
+        highScoreLabel.fontSize = 9
         highScoreLabel.fontColor = .green
         highScoreLabel.horizontalAlignmentMode = .center
-        highScoreLabel.position = CGPoint(x: frame.midX, y: lowerLabelY)
+        highScoreLabel.position = CGPoint(x: frame.midX, y: upperLabelY)
         addChild(highScoreLabel)
         
         maxRoundHitsLabel = SKLabelNode(fontNamed: "Helvetica")
@@ -183,7 +210,7 @@ class GameScene: SKScene {
         warningThreshold3 = warningThreshold2 - (brickDimension + brickSpacing)
         
         warningView = SKSpriteNode(color: .red.withAlphaComponent(0.5), size: CGSize(width: frame.width, height: 2))
-        warningView.position = CGPoint(x: frame.midX, y: gameOverYPosition)
+        warningView.position = CGPoint(x: frame.midX, y: gameOverYPosition - 2)
         addChild(warningView)
         warningView.alpha = 0.0
     }
@@ -218,8 +245,50 @@ class GameScene: SKScene {
 
     // MARK: - Gets called 30 times a second
     override func update(_ currentTime: TimeInterval) {
-        guard state != .userIsPullingBackWithValidAngle || state != .userIsPullingBackWithInvalidAngle else { return }
-        guard ball != nil else { restartGame(); return }
+        switch state {
+        case .waitingForUser, .userIsPullingBackWithValidAngle, .userIsPullingBackWithInvalidAngle:
+            flashWarningIfNeeded()
+            if bricksHaveReachedBottom() {
+                state = .needsRestart
+            }
+            return
+        case .ballsAreFlying:
+            updateFlying(currentTime)
+        case .needsRoundReset:
+
+            resetScores()
+            updateLabels()
+
+            shiftBricksAndCreateNewRow()
+            state = .waitingForUser
+            saveValuesToUserDefaults()
+        case .needsRestart:
+            restartGame()
+            state = .waitingForUser
+            saveValuesToUserDefaults()
+        }
+    }
+    
+    private func saveValuesToUserDefaults() {
+        AppSettings.bestRatio = bestRatio
+        AppSettings.highestLevel = highestLevel
+        AppSettings.maxHits = maxHits
+    }
+    
+    private func noBallsFlying() -> Bool {
+        guard let ball else { return true }
+        
+        if ball.physicsBody?.velocity == .zero {
+            if !trailingBallsExist() {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
+    private func updateFlying(_ currentTime: TimeInterval) {
+        guard !noBallsFlying() else { state = .needsRoundReset; return }
         
         flashWarningIfNeeded()
         
@@ -229,26 +298,11 @@ class GameScene: SKScene {
             updateMainBall(previousX: ball.position.x)
         }
         
-        if state == .needsRoundReset {
-            // Score
-            updateScores()
-            // Bricks
-            shiftBricksAndCreateNewRow()
-            state = .waitingForUser
-        }
-        
-        if state == .needsRestart {
-            restartGame()
-            state = .waitingForUser
-        }
-        
-        if state == .ballsAreFlying {
-            if !trailingBallsExist() && ball.physicsBody?.velocity == .zero {
-                state = .needsRoundReset
-            } else {
-                addGravityToBallsIfNeeded(for: currentTime)
-                removeAnyBallsInsideABrick()
-            }
+        if !trailingBallsExist() && ball.physicsBody?.velocity == .zero {
+            state = .needsRoundReset
+        } else {
+            addGravityToBallsIfNeeded(for: currentTime)
+            removeAnyBallsInsideABrick()
         }
         
         if bricksHaveReachedBottom() {
@@ -354,15 +408,15 @@ class GameScene: SKScene {
         ball.physicsBody?.velocity = .zero
     }
     
-    private func updateScores() {
-        if currentHits > maxRoundHits {
-            maxRoundHits = currentHits
+    private func resetScores() {
+        if currentHits > maxHits {
+            maxHits = currentHits
         }
         round += 1
-        numOfTrailingBalls += 1
+        numOfTrailingBalls = round - 1
         
-        if round > maxRounds {
-            maxRounds = round
+        if round > highestLevel {
+            highestLevel = round
         }
     }
     
@@ -425,10 +479,11 @@ class GameScene: SKScene {
 
     
     private func updateLabels() {
-        roundRatio = max(roundRatio, (Double(currentHits) / Double(numOfTrailingBalls + 1)))
+        roundRatio = max(roundRatio, (Float(currentHits) / Float(numOfTrailingBalls + 1)))
         bestRatio = max(bestRatio, roundRatio)
-        highScoreLabel.text = "Level: \(maxRounds)"
-        maxRoundHitsLabel.text = "Max Hits: \(maxRoundHits)"
+        currentLevelLabel.text = "Level: \(round)"
+        highScoreLabel.text = "Highest Level: \(highestLevel)"
+        maxRoundHitsLabel.text = "Max Hits: \(maxHits)"
         currentHitsLabel.text = "Hits: \(currentHits)"
         roundRatioLabel.text = "Ratio: \(String(format: "%.2f", roundRatio))"
         bestRatioLabel.text = "Best Ratio: \(String(format: "%.2f", bestRatio))"
@@ -439,8 +494,8 @@ class GameScene: SKScene {
             AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
             
             currentHits = 0
-            numOfTrailingBalls = 0
             round = 1
+            
             // Remove all existing bricks and balls
             for child in children {
                 if ["bricks", "mainball", "aimball"].contains(child.name) {
@@ -464,6 +519,8 @@ class GameScene: SKScene {
             physicsWorld.contactDelegate = self
             ball.physicsBody?.categoryBitMask = CategoryBitMask.ballCategory
             ball.physicsBody?.contactTestBitMask = CategoryBitMask.brickCategory
+            
+            updateLabels()
         }
     
     // Check if any bricks have reached the bottom gutter
