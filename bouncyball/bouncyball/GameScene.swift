@@ -1,4 +1,5 @@
 import SpriteKit
+import SwiftUI
 import GameplayKit
 import AudioToolbox
 
@@ -19,6 +20,13 @@ struct CategoryBitMask {
     static let aimBallCategory: UInt32 = 0x1 << 4
     static let ballCollisionCategory: UInt32 = 0x1 << 5
 }
+
+private let _trailingball = "trailingball"
+private let _mainball = "mainball"
+private let _bricks = "bricks"
+private let _brick = "brick"
+private let _aimball = "aimball"
+private let _flashaction = "flashaction"
 
 class GameScene: SKScene {
     var state: GameState = .needsRestart
@@ -57,7 +65,6 @@ class GameScene: SKScene {
     var warningThreshold2: CGFloat!
     var warningThreshold3: CGFloat!
     
-    var ballYPosition: CGFloat!
     var gameOverYPosition: CGFloat!
     var playAreaHeight: CGFloat!
     let scoreBoardHeight: CGFloat = 80
@@ -66,6 +73,8 @@ class GameScene: SKScene {
     
     var bestRatio: Float = 0
     var roundRatio: Float = 0
+    
+    var mainBallStartingPoint: CGPoint!
         
     deinit {
         brickHaptic = nil
@@ -80,7 +89,7 @@ class GameScene: SKScene {
         setupLabels()
         setupBoundaries()
         (playAreaHeight, gameOverYPosition) = playAreaHeightAndGameOverYValue()
-        ballYPosition = calculateBallYPosition()
+        mainBallStartingPoint = calculateBallStartingPosition()
         setupWarningView()
         gamePlayBackground()
 
@@ -88,6 +97,11 @@ class GameScene: SKScene {
         physicsWorld.contactDelegate = self
 
         updateLabels()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            let skvView = SKView()
+            skvView.presentScene(scene)
+        }
     }
     
     private func grabUserDefaults() {
@@ -239,12 +253,15 @@ class GameScene: SKScene {
         return (frame.maxY - (yValue + scoreBoardHeight), yValue + (brickDimension + brickSpacing))
     }
     
-    private func calculateBallYPosition() -> CGFloat {
-        return gameOverYPosition - brickDimension + ballDimension
+    private func calculateBallStartingPosition() -> CGPoint {
+        return CGPoint(x: frame.midX, y: gameOverYPosition - brickDimension + ballDimension)
     }
 
     // MARK: - Gets called 30 times a second
     override func update(_ currentTime: TimeInterval) {
+        if ball == nil || ball.parent == nil {
+            ball = createMainBall()
+        }
         switch state {
         case .waitingForUser, .userIsPullingBackWithValidAngle, .userIsPullingBackWithInvalidAngle:
             flashWarningIfNeeded()
@@ -253,6 +270,7 @@ class GameScene: SKScene {
             }
             return
         case .ballsAreFlying:
+            resetMainBall()
             updateFlying(currentTime)
         case .needsRoundReset:
 
@@ -267,6 +285,10 @@ class GameScene: SKScene {
             state = .waitingForUser
             saveValuesToUserDefaults()
         }
+    }
+    
+    private func resetMainBall() {
+        
     }
     
     private func saveValuesToUserDefaults() {
@@ -294,7 +316,7 @@ class GameScene: SKScene {
         
         removeTrailingBalls()
         
-        if ball.position.y < ballYPosition || nodeIsOffScreen(node: ball) {
+        if ball.position.y < mainBallStartingPoint.y || nodeIsOffScreen(node: ball) {
             updateMainBall(previousX: ball.position.x)
         }
         
@@ -314,19 +336,15 @@ class GameScene: SKScene {
     
     private func removeAnyBallsInsideABrick() {
         let balls = children.compactMap { $0 as? BouncyBall }
-        let bricks = children.filter { $0.name == "brick" }
+        let bricks = children.filter { $0.name == _brick }
         
         for ball in balls {
             for brick in bricks {
-                if let ballPhysicsBody = ball.physicsBody, let brickPhysicsBody = brick.physicsBody {
-                    if ballPhysicsBody.allContactedBodies().contains(brickPhysicsBody) {
-                        if ball.name == "mainball" {
-                            // reset ball
-                            ball.position.y = ballYPosition - 1000
-                        } else {
-                            ball.removeFromParent()
-                        }
+                if ball.isWithinBounds(brickNode: brick) {
+                    if ball.name == _mainball {
+                        mainBallStartingPoint.x = ball.position.x
                     }
+                    ball.removeFromParent()
                 }
             }
         }
@@ -334,7 +352,7 @@ class GameScene: SKScene {
 
     
     private func addGravityToBallsIfNeeded(for currentTime: TimeInterval) {
-        if let balls = children.filter({ $0.name == "mainball" || $0.name == "trailingball" }) as? [BouncyBall] {
+        if let balls = children.filter({ $0.name == _mainball || $0.name == _trailingball }) as? [BouncyBall] {
             if balls.isNotEmpty {
                 for ball in balls {
                     if Int(currentTime - ball.releasedAt!) > BouncyBall.ttl { // I'm over my ttl
@@ -350,7 +368,7 @@ class GameScene: SKScene {
     }
     
     private func checkForBallsOffScreen() -> Bool {
-        let balls = children.filter { $0.name == "mainball" || $0.name == "trailingball" }
+        let balls = children.filter { $0.name == _mainball || $0.name == _trailingball }
         for ball in balls {
             if nodeIsOffScreen(node: ball) {
                 return true
@@ -371,19 +389,19 @@ class GameScene: SKScene {
     }
     
     private func removeTrailingBalls() {
-        let trailingBalls = children.filter { $0.name == "trailingball" }
+        let trailingBalls = children.filter { $0.name == _trailingball }
         for ball in trailingBalls {
             if nodeIsOffScreen(node: ball) {
                 ball.removeFromParent()
             }
-            if ball.position.y < ballYPosition {
+            if ball.position.y < mainBallStartingPoint.y - 3 {
                 ball.removeFromParent()
             }
         }
     }
     
     private func trailingBallsExist() -> Bool {
-        return !children.filter { $0.name == "trailingball" }.isEmpty
+        return !children.filter { $0.name == _trailingball }.isEmpty
     }
     
     private func flashWarningIfNeeded() {
@@ -404,7 +422,7 @@ class GameScene: SKScene {
         if newX > frame.maxX - ballDimension {
             newX = frame.maxX - ballDimension
         }
-        ball.position = CGPoint(x: newX, y: frame.minY + ballYPosition)
+        ball.position = CGPoint(x: newX, y: frame.minY + mainBallStartingPoint.y)
         ball.physicsBody?.velocity = .zero
     }
     
@@ -431,15 +449,15 @@ class GameScene: SKScene {
         let repeatAction = SKAction.repeatForever(flashSequence)
         
         let color = color(for: brickY)
-        warningView.removeAction(forKey: "flashAction")
-        warningView.run(repeatAction, withKey: "flashAction")
+        warningView.removeAction(forKey: _flashaction)
+        warningView.run(repeatAction, withKey: _flashaction)
         warningView.color = color
         
     }
     
     func stopFlashingWarningView() {
         guard warningView.hasActions() else { return }
-        warningView.removeAction(forKey: "flashAction")
+        warningView.removeAction(forKey: _flashaction)
         warningView.alpha = 0.0
     }
     
@@ -466,7 +484,7 @@ class GameScene: SKScene {
     func lowestYBrickValue() -> CGFloat {
         var lowest = CGFloat.greatestFiniteMagnitude
         for child in children {
-            if child.name == "bricks" {
+            if child.name == _bricks {
                 for brick in child.children {
                     if brick.position.y < lowest {
                         lowest = brick.position.y
@@ -498,7 +516,7 @@ class GameScene: SKScene {
             
             // Remove all existing bricks and balls
             for child in children {
-                if ["bricks", "mainball", "aimball"].contains(child.name) {
+                if [_bricks, _mainball, _aimball].contains(child.name) {
                     child.removeFromParent()
                 }
             }
@@ -509,7 +527,7 @@ class GameScene: SKScene {
             
             // Create the initial ball and bricks
             ball = createMainBall()
-            ball.name = "mainball"
+            ball.name = _mainball
             addChild(ball)
             
             let bricks = createTopBricks()
@@ -526,7 +544,7 @@ class GameScene: SKScene {
     // Check if any bricks have reached the bottom gutter
         func bricksHaveReachedBottom() -> Bool {
             for child in children {
-                if child.name == "bricks" {
+                if child.name == _bricks {
                     for brick in child.children {
                         if brick.position.y <= gameOverYPosition {
                             return true
@@ -540,7 +558,7 @@ class GameScene: SKScene {
     // Create the ball node
     func createMainBall() -> BouncyBall {
         let ball = BouncyBall(radius: ballDimension)
-        ball.position = CGPoint(x: frame.midX, y: frame.minY + ballYPosition)
+        ball.position = CGPoint(x: frame.midX, y: frame.minY + mainBallStartingPoint.y)
         ball.fillColor = .green
         ball.strokeColor = .clear
         ball.physicsBody = SKPhysicsBody(circleOfRadius: ballDimension)
@@ -554,7 +572,28 @@ class GameScene: SKScene {
         ball.physicsBody?.contactTestBitMask = CategoryBitMask.brickCategory | CategoryBitMask.topAndSidesEdgeCategory
         ball.physicsBody?.collisionBitMask = CategoryBitMask.ballCollisionCategory | CategoryBitMask.topAndSidesEdgeCategory
         
-        ball.name = "mainball"
+        ball.name = _mainball
+        ball.releasedAt = CACurrentMediaTime()
+        return ball
+    }
+    
+    func createTrailingBall() -> BouncyBall {
+        let ball = BouncyBall(radius: ballDimension)
+        ball.position = CGPoint(x: frame.midX, y: frame.minY + mainBallStartingPoint.y)
+        ball.fillColor = .green
+        ball.strokeColor = .clear
+        ball.physicsBody = SKPhysicsBody(circleOfRadius: ballDimension)
+        ball.physicsBody?.isDynamic = true
+        ball.physicsBody?.restitution = 1.0
+        ball.physicsBody?.friction = 0.0
+        ball.physicsBody?.linearDamping = 0.0
+        ball.physicsBody?.angularDamping = 0.0
+        ball.physicsBody?.affectedByGravity = false
+        ball.physicsBody?.categoryBitMask = CategoryBitMask.ballCategory
+        ball.physicsBody?.contactTestBitMask = CategoryBitMask.brickCategory | CategoryBitMask.topAndSidesEdgeCategory
+        ball.physicsBody?.collisionBitMask = CategoryBitMask.ballCollisionCategory | CategoryBitMask.topAndSidesEdgeCategory
+        
+        ball.name = _trailingball
         ball.releasedAt = CACurrentMediaTime()
         return ball
     }
@@ -582,7 +621,7 @@ class GameScene: SKScene {
             ball.physicsBody!.collisionBitMask = 0
             ball.physicsBody!.contactTestBitMask = 0
             
-            ball.name = "aimball"
+            ball.name = _aimball
 
             balls.append(ball)
         }
@@ -601,7 +640,7 @@ class GameScene: SKScene {
         for col in 0..<numColumns {
             let brick = SKSpriteNode(color: .blue, size: CGSize(width: brickDimension, height: brickDimension))
             brick.position = CGPoint(x: startX + CGFloat(col) * (brickDimension + brickSpacing), y: startY)
-            brick.name = "brick"
+            brick.name = _brick
             brick.physicsBody = SKPhysicsBody(rectangleOf: brick.size)
             brick.physicsBody?.isDynamic = false
             
@@ -619,7 +658,7 @@ class GameScene: SKScene {
             
             topRow.append(brick)
         }
-        bricks.name = "bricks"
+        bricks.name = _bricks
         
         var random = selectRandomItems(topRow, percentage: 0.45)
         while random.isEmpty {
@@ -647,7 +686,7 @@ class GameScene: SKScene {
         let shiftAmount = brickDimension + brickSpacing // Adjust the shift amount as desired
         
         for child in children {
-            if child.name == "bricks" {
+            if child.name == _bricks {
                 child.children.forEach { $0.position.y -= shiftAmount }
             }
         }
@@ -657,9 +696,8 @@ class GameScene: SKScene {
         addChild(newBricks)
         numRows += 1
         
-        let bricks = children.filter { $0.name == "brick" }
-        bricks.forEach { [weak self] node in
-            guard let self else { return }
+        let bricks = children.filter { $0.name == _brick }
+        bricks.forEach { node in
             node.physicsBody?.categoryBitMask = CategoryBitMask.brickCategory
             node.physicsBody?.contactTestBitMask = CategoryBitMask.ballCategory
             node.physicsBody?.collisionBitMask = CategoryBitMask.ballCollisionCategory
@@ -671,7 +709,7 @@ class GameScene: SKScene {
 extension GameScene: SKPhysicsContactDelegate {
     
     func didBegin(_ contact: SKPhysicsContact) {
-        if let brickNode = contact.bodyA.node as? SKSpriteNode, brickNode.name == "brick" {
+        if let brickNode = contact.bodyA.node as? SKSpriteNode, brickNode.name == _brick {
             brickNode.hitCount -= 1
             currentHits += 1
             brickHaptic.impactOccurred()
@@ -680,7 +718,7 @@ extension GameScene: SKPhysicsContactDelegate {
                 brickNode.removeFromParent()
                 createExplosion(at: brickNode.position)
             }
-        } else if let brickNode = contact.bodyB.node as? SKSpriteNode, brickNode.name == "brick" {
+        } else if let brickNode = contact.bodyB.node as? SKSpriteNode, brickNode.name == _brick {
             brickNode.hitCount -= 1
             currentHits += 1
             brickHaptic.impactOccurred()
@@ -812,7 +850,7 @@ extension GameScene {
         
         for i in 0..<numOfTrailingBalls {
             let trailingBall = createMainBall()
-            trailingBall.name = "trailingball"
+            trailingBall.name = _trailingball
             trailingBall.position = position
             addChild(trailingBall)
             
@@ -908,10 +946,66 @@ class BouncyBall: SKShapeNode {
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    func isWithinBounds(brickNode: SKNode) -> Bool {
+        let ballFrame = calculateAccumulatedFrame()
+        let brickFrame = calculateAccumulatedFrame()
+        
+        if ballFrame.intersects(brickFrame) {
+            let intersectionRect = ballFrame.intersection(brickFrame)
+            let convertedRect = convert(intersectionRect.origin, to: brickNode)
+            
+            let intersectingNodes = nodes(at: convertedRect)
+            
+            return intersectingNodes.contains(brickNode)
+        }
+        
+        return false
+    }
 }
 
 extension Collection {
     var isNotEmpty: Bool {
         return !isEmpty
+    }
+}
+
+import SwiftUI
+import SpriteKit
+
+struct SKSceneWrapper: UIViewRepresentable {
+    typealias UIViewType = SKView
+
+    let scene: SKScene
+
+    func makeUIView(context: Context) -> SKView {
+        let skView = SKView()
+        skView.presentScene(scene)
+        return skView
+    }
+
+    func updateUIView(_ uiView: SKView, context: Context) {
+        // Update the SKView if needed
+    }
+}
+
+struct ContentView: View {
+    var body: some View {
+        ZStack {
+            SKSceneWrapper(scene: YourSKScene())
+            VStack {
+                Text("Hello, SwiftUI!")
+                    .font(.largeTitle)
+                    .foregroundColor(.white)
+                    .padding()
+                // Add your SwiftUI views here
+            }
+        }
+    }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
     }
 }

@@ -42,4 +42,3 @@ enum AppSettings {
         }
     }
 }
-import Foundation
